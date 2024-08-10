@@ -23,24 +23,24 @@ const upload = multer({ storage });
 // Function to remove background from an image file
 async function removeImageBackground(imgSource) {
   try {
-      // Removing background
-      const blob = await removeBackground(imgSource);
+    // Removing background
+    const blob = await removeBackground(imgSource);
 
-      // Converting Blob to buffer
-      const buffer = Buffer.from(await blob.arrayBuffer());
+    // Converting Blob to buffer
+    const buffer = Buffer.from(await blob.arrayBuffer());
 
-      const image = await Jimp.read(buffer);
-      
-      return image;
+    // Read image using Jimp
+    const image = await Jimp.read(buffer);
 
-      // // Generating data URL
-      // const dataURL = `data:image/png;base64,${buffer.toString("base64")}`;
-      
-      // // Returning the data URL
-      // return dataURL;
+    // Enhance the image quality
+    // image
+    //   .brightness(0.2)  // Adjust brightness
+    //   .contrast(0.2)    // Adjust contrast
+    //   .sharpen();       // Apply sharpening
+
+    return image;
   } catch (error) {
-      // Handling errors
-      throw new Error('Error removing background: ' + error);
+    throw new Error('Error removing background: ' + error.message);
   }
 }
 
@@ -61,6 +61,9 @@ async function addSolidBackground(image, outputFilePath, color = '#ff0000') {
   }
 }
 
+// Serve static files from the 'result' directory
+app.use('/result', express.static(path.join('result')));
+
 // Endpoint to remove background from an uploaded image
 app.post('/remove-background', upload.single('image'), async (req, res) => {
   if (!req.file) {
@@ -69,32 +72,31 @@ app.post('/remove-background', upload.single('image'), async (req, res) => {
 
   try {
     // Path to the uploaded file
-    const inputFilePath = `./uploads/${req.file.filename}`
-    console.log(typeof(inputFilePath))
+    const inputFilePath = path.join('uploads', req.file.filename);
 
-    // Remove background
+    // Remove background and enhance the image
     const image = await removeImageBackground(inputFilePath);
 
-    // fs.writeFileSync(`./result/output.png`, imageWithNoBackground.split(';base64,').pop(), { encoding: 'base64' });
+    // Create result file path
+    const resultFilePath = path.join('result', `result-${Date.now()}.jpeg`);
 
-    const resultFilePath = `./result/result-${Date.now()}.jpeg`;
-
-    const parts = resultFilePath.split('/');
-
-    const filename=parts[2]
-
-    const resultUrl=`https://img-upload-u1y8.onrender.com/result/${filename}`
-
+    // Add solid background to the image and save it
     await addSolidBackground(image, resultFilePath);
 
-    // Return the data URL
-    res.status(200).json({message:"Updated",resultUrl});
+    // Extract filename from resultFilePath
+    const filename = path.basename(resultFilePath);
+
+    // Construct the URL to access the result image
+    const resultUrl = `http://localhost:${port}/result/${filename}`;
+
+    // Return the URL
+    res.status(200).json({ message: "Image processed successfully", resultUrl });
 
     // Clean up: Remove the uploaded file
     fs.unlinkSync(inputFilePath);
   } catch (error) {
     console.error('Error:', error.message);
-    res.status(500).json({ error: 'Error removing background' });
+    res.status(500).json({ error: 'Error processing image' });
   }
 });
 
