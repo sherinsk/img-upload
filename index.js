@@ -20,6 +20,22 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+function unsharpMask(image, amount = 1, radius = 2, threshold = 0) {
+  const blurred = image.clone();
+  blurred.blur(radius);
+
+  const diffImage = difference(image, blurred);
+  diffImage.contrast(amount);
+
+  if (threshold > 0) {
+    diffImage.threshold(threshold);
+  }
+
+  image.blend(diffImage, 0, 0);
+
+  return image;
+}
+
 // Function to remove background from an image file
 async function removeImageBackground(imgSource) {
   try {
@@ -31,6 +47,7 @@ async function removeImageBackground(imgSource) {
 
     // Read image using Jimp
     const image = await Jimp.read(buffer);
+    
 
     // Enhance the image quality
     // image
@@ -44,9 +61,12 @@ async function removeImageBackground(imgSource) {
   }
 }
 
-async function addSolidBackground(image, outputFilePath, color = '#ff0000') {
+async function addSolidBackground(image, outputFilePath, color = '#ffffff') {
   try {
     const { width, height } = image.bitmap;
+
+    image.brightness(0.2);
+    image.contrast(0.2);
 
     // Create a new image with the background color
     const background = new Jimp(width, height, color);
