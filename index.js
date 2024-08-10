@@ -94,6 +94,8 @@ app.post('/remove-background', upload.single('image'), async (req, res) => {
     // Construct the URL to access the result image
     const resultUrl = `http://localhost:${port}/result/${filename}`;
 
+    
+
     // Return the URL
     res.status(200).json({ message: "Image processed successfully", resultUrl });
 
