@@ -79,10 +79,16 @@ app.post('/remove-background', upload.single('image'), async (req, res) => {
 
     const resultFilePath = `./result/result-${Date.now()}.jpeg`;
 
+    const parts = resultFilePath.split('/');
+
+    const filename=parts[2]
+
+    const resultUrl=`https://img-upload-u1y8.onrender.com/result/${filename}`
+
     await addSolidBackground(image, resultFilePath);
 
     // Return the data URL
-    res.status(200).json({message:"Updated"});
+    res.status(200).json({message:"Updated",resultUrl});
 
     // Clean up: Remove the uploaded file
     fs.unlinkSync(inputFilePath);
